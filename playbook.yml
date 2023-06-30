@@ -1,0 +1,21 @@
+# code: language=ansible
+---
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: install desktop environment
+      apt:
+        name: ["lxqt-core"]
+        state: present
+    - name: install GUI apps
+      apt:
+        name: [""]
+        state: presen
+    - name: install CLI apps
+      apt:
+        name: ["mc", "tmux", "vim", "neovim", "aptitude", "tasksel", "tig"]
+        state: present
+    - name: install tools
+      apt:
+        name: ["ansible", "docker-compose", "docker.io", "git"]
+        state: present
