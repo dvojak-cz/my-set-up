@@ -26,7 +26,7 @@
             dest: "{{ keyrings }}/google.pub"
         - name: "Apt repo> add Suse repo"
           apt_repository:
-            repo: "deb [arch=amd64 signed-by={{ keyrings }}/suse.key] http://download.opensuse.org/repositories/home:/manuelschneid3r/Debian_9.0/ /"
+            repo: "deb [signed-by={{ keyrings }}/suse.key] http://download.opensuse.org/repositories/home:/manuelschneid3r/Debian_9.0/ /"
             filename: suse
         - name: "Apt repo> add Microsoft repo"
           apt_repository:
@@ -47,7 +47,7 @@
             state: present
         - name: "Install> GUI apps"
           apt:
-            name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert"]
+            name: ["code", "terminator", "google-chrome-stable", "firefox-esr"]
             state: present
         - name: "Install> CLI apps"
           apt:
@@ -55,7 +55,7 @@
             state: present
         - name: "Install> tools"
           apt:
-            name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh"]
+            name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh", "sudo"]
             state: present
     - name: Oh My zsh
       become: True
