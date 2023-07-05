@@ -57,9 +57,17 @@
           apt:
             name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh", "sudo"]
             state: present
+    - name: Add jan tu sudo group
+      user:
+        name: "{{ user }}"
+        groups: sudo
+        append: true
+- hosts: localhost
+  connection: local
+  become: True
+  become_user: jan
+  tasks:
     - name: Oh My zsh
-      become: True
-      become_user: "{{ user }}"
       block:
         - name: "Oh My zsh> check if zsh is default shell"
           stat:
@@ -75,8 +83,6 @@
             name: "{{ user }}"
             shell: /bin/zsh
     - name: Dotfiles
-      become: True
-      become_user: "{{ user }}"
       vars:
         repo: https://github.com/dvojak-cz/DotFiles.git
         path: "~/.dotfiles"
@@ -103,8 +109,15 @@
           command:
             cmd: "./install.sh"
             chdir: "{{ path }}"
-    - name: Add jan tu sudo group
-      user:
-        name: "{{ user }}"
-        groups: sudo
-        append: true
+    - name: SSH
+      block:
+        - name: create .ssh folder
+          file:
+            path: ~/.ssh/
+            state: directory
+        - name: Download ssh key
+          get_url:
+            url: https://owncloud.cesnet.cz/index.php/s/51hpuGkGaQZGa9q/download
+            dest: ~/.ssh/id_rsa.zip
+            mode: 0600
+    
