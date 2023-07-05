@@ -7,62 +7,68 @@
     user: jan
   tasks:
     - name: Add apt repos
-      when: True
       block:
-        - name: create dir for keyrings
+        - name: "Apt repo> create dir for keyrings"
           file:
             path: "{{ keyrings }}"
             state: directory
-        - name: add Microsoft repo key
+        - name: Apt repo> add suse repo key
+          get_url:
+            url: https://download.opensuse.org/repositories/home:manuelschneid3r/Debian_12/Release.key
+            dest: "{{ keyrings }}/suse.key"
+        - name: "Apt repo> add Microsoft repo key"
           get_url:
             url: https://packages.microsoft.com/keys/microsoft.asc
             dest: "{{ keyrings }}/microsoft.asc"
-        - name: add google repo key
+        - name: "Apt repo> add google repo key"
           get_url:
             url: https://dl.google.com/linux/linux_signing_key.pub
             dest: "{{ keyrings }}/google.pub"
-        - name: add Microsoft repo
+        - name: "Apt repo> add Suse repo"
+          apt_repository:
+            repo: "deb [arch=amd64 signed-by={{ keyrings }}/suse.key] http://download.opensuse.org/repositories/home:/manuelschneid3r/Debian_9.0/ /"
+            filename: suse
+        - name: "Apt repo> add Microsoft repo"
           apt_repository:
             repo: "deb [arch=amd64 signed-by={{ keyrings }}/microsoft.asc] https://packages.microsoft.com/repos/code stable main"
             filename: vscode
-        - name: add google repo
+        - name: "Apt repo> add google repo"
           apt_repository:
             repo: "deb [arch=amd64 signed-by={{ keyrings }}/google.pub] http://dl.google.com/linux/chrome/deb/ stable main"
             filename: google-chrome
-    - name: Install apps
-      when: True
+    - name: Install
       block:
-      - name: apt udate cache
-        apt:
-          update_cache: yes
-      - name: install desktop environment
-        apt:
-          name: ["lxqt-core", "sddm"]
-          state: present
-      - name: install GUI apps
-        apt:
-          name: ["code", "terminator", "google-chrome-stable", "firefox-esr"]
-          state: present
-      - name: install CLI apps
-        apt:
-          name: ["mc", "tmux", "vim", "aptitude", "tig"]
-          state: present
-      - name: install tools
-        apt:
-          name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh"]
-          state: present
+        - name: "Install> apt udate cache"
+          apt:
+            update_cache: yes
+        - name: "Install> install desktop environment"
+          apt:
+            name: ["lxqt"]
+            state: present
+        - name: "Install> GUI apps"
+          apt:
+            name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert"]
+            state: present
+        - name: "Install> CLI apps"
+          apt:
+            name: ["mc", "tmux", "vim", "aptitude", "tig", "curl", "neofetch"]
+            state: present
+        - name: "Install> tools"
+          apt:
+            name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh"]
+            state: present
     - name: Oh My zsh
       become: True
       become_user: "{{ user }}"
       block:
-        - name: check if zsh is default shell
+        - name: "Oh My zsh> check if zsh is default shell"
           stat:
             path: ~/.oh-my-zsh
           register: oh_my_zsh
-        - name: install oh-my-zsh
+        - name: "Oh My zsh> install"
           when: not (oh_my_zsh.stat.isdir is defined and oh_my_zsh.stat.isdir)
           shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-        - name: set zsh as default shell
+        - name: "Oh My zsh> set zsh as default shell"
           become: True
           become_user: root
           user:
@@ -74,26 +80,31 @@
       vars:
         repo: https://github.com/dvojak-cz/DotFiles.git
         path: "~/.dotfiles"
-        ssh_repo: https://github.com/dvojak-cz/DotFilessssss.git
+        ssh_repo: "git@github.com:dvojak-cz/DotFiles.git"
       block:
-      - name: check if dotfiles directory exists
-        stat:
-          path: "{{ path }}"
-        register: dir
-      - name: clone
-        when: not dir.stat.exists
-        git:
-          repo: "{{ repo }}"
-          dest: "{{ path }}"
-          clone: yes
-          update: yes
-      - name: set remote url to ssh
-        when: not dir.stat.exists
-        command:
-          cmd: git remote set-url origin {{ ssh_repo }}
-          chdir: "{{ path }}"
-      - name: apply dotfiles
-        when: not dir.stat.exists
-        command:
-          cmd: "./install.sh"
-          chdir: "{{ path }}"
+        - name: "Dotfiles> check if dotfiles directory exists"
+          stat:
+            path: "{{ path }}"
+          register: dir
+        - name: "Dotfiles> clone"
+          when: not dir.stat.exists
+          git:
+            repo: "{{ repo }}"
+            dest: "{{ path }}"
+            clone: yes
+            update: yes
+        - name: "Dotfiles> set remote url to ssh"
+          when: not dir.stat.exists
+          command:
+            cmd: git remote set-url origin {{ ssh_repo }}
+            chdir: "{{ path }}"
+        - name: "Dotfiles> apply"
+          when: not dir.stat.exists
+          command:
+            cmd: "./install.sh"
+            chdir: "{{ path }}"
+    - name: Add jan tu sudo group
+      user:
+        name: "{{ user }}"
+        groups: sudo
+        append: true
