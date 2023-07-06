@@ -3,69 +3,64 @@
 - hosts: localhost
   connection: local
   vars:
-    keyrings: /etc/apt/keyrings
     user: jan
   tasks:
     - name: Add apt repos
       block:
-        - name: "Apt repo> create dir for keyrings"
-          file:
-            path: "{{ keyrings }}"
-            state: directory
-        - name: Apt repo> add suse repo key
+        - name: "Apt repo> add Microsoft repo key"
           get_url:
             url: https://download.opensuse.org/repositories/home:manuelschneid3r/Debian_12/Release.key
-            dest: "{{ keyrings }}/suse.key"
+            dest: "/etc/apt/trusted.gpg.d/suse.asc"
+        - name: "Apt repo> add Suse repo"
+          apt_repository:
+            repo: "deb http://download.opensuse.org/repositories/home:/manuelschneid3r/Debian_12/ /"
+            filename: suse
+
         - name: "Apt repo> add Microsoft repo key"
           get_url:
             url: https://packages.microsoft.com/keys/microsoft.asc
-            dest: "{{ keyrings }}/microsoft.asc"
+            dest: "/etc/apt/trusted.gpg.d/microsoft.asc"
+        - name: "Apt repo> add Microsoft repo"
+          apt_repository:
+            repo: "deb https://packages.microsoft.com/repos/code stable main"
+            filename: microsoft
+
         - name: "Apt repo> add google repo key"
           get_url:
             url: https://dl.google.com/linux/linux_signing_key.pub
-            dest: "{{ keyrings }}/google.pub"
-        - name: "Apt repo> add Suse repo"
-          apt_repository:
-            repo: "deb [signed-by={{ keyrings }}/suse.key] http://download.opensuse.org/repositories/home:/manuelschneid3r/Debian_9.0/ /"
-            filename: suse
-        - name: "Apt repo> add Microsoft repo"
-          apt_repository:
-            repo: "deb [arch=amd64 signed-by={{ keyrings }}/microsoft.asc] https://packages.microsoft.com/repos/code stable main"
-            filename: vscode
+            dest: "/etc/apt/trusted.gpg.d/google.asc"
         - name: "Apt repo> add google repo"
           apt_repository:
-            repo: "deb [arch=amd64 signed-by={{ keyrings }}/google.pub] http://dl.google.com/linux/chrome/deb/ stable main"
-            filename: google-chrome
+            repo: "deb http://dl.google.com/linux/chrome/deb/ stable main"
+            filename: google
+
     - name: Install
       block:
-        - name: "Install> apt udate cache"
-          apt:
-            update_cache: yes
         - name: "Install> install desktop environment"
           apt:
             name: ["lxqt"]
-            state: present
         - name: "Install> GUI apps"
           apt:
-            name: ["code", "terminator", "google-chrome-stable", "firefox-esr"]
-            state: present
+            name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert"]
         - name: "Install> CLI apps"
           apt:
             name: ["mc", "tmux", "vim", "aptitude", "tig", "curl", "neofetch"]
-            state: present
         - name: "Install> tools"
           apt:
             name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh", "sudo"]
-            state: present
+
     - name: Add jan tu sudo group
       user:
         name: "{{ user }}"
         groups: sudo
         append: true
+
 - hosts: localhost
   connection: local
   become: True
   become_user: jan
+  vars:
+    user: jan
   tasks:
     - name: Oh My zsh
       block:
@@ -109,6 +104,7 @@
           command:
             cmd: "./install.sh"
             chdir: "{{ path }}"
+
     - name: SSH
       block:
         - name: create .ssh folder
