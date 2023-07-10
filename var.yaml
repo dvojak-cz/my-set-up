@@ -1,0 +1,10 @@
+---
+SUDO_USERS: ["jan"]
+USERS:
+  - USERNAME: jan
+    SYSTEMD:
+      - albert.service
+    DIR:
+      - ~/dev
+      - ~/tmp
+      - ~/.vpn

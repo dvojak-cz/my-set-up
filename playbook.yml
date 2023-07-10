@@ -2,8 +2,7 @@
 ---
 - hosts: localhost
   connection: local
-  vars:
-    user: jan
+  vars_files: ["var.yaml"]
   tasks:
     - name: Add apt repos
       block:
@@ -44,23 +43,23 @@
             name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert"]
         - name: "Install> CLI apps"
           apt:
-            name: ["mc", "tmux", "vim", "aptitude", "tig", "curl", "neofetch"]
+            name: ["mc", "tmux", "vim", "aptitude", "tig", "curl", "neofetch", "network-manager", "network-manager-openvpn"]
         - name: "Install> tools"
           apt:
             name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh", "sudo"]
 
     - name: Add jan tu sudo group
+      loop: "{{ SUDO_USERS }}"
       user:
-        name: "{{ user }}"
+        name: "{{ item }}"
         groups: sudo
         append: true
 
 - hosts: localhost
   connection: local
   become: True
-  become_user: jan
-  vars:
-    user: jan
+  vars_files: ["var.yaml"]
+  become_user: "{{ USERS[0].USERNAME }}"
   tasks:
     - name: Oh My zsh
       block:
@@ -75,8 +74,9 @@
           become: True
           become_user: root
           user:
-            name: "{{ user }}"
+            name: "{{ USERS[0].USERNAME }}"
             shell: /bin/zsh
+
     - name: Dotfiles
       vars:
         repo: https://github.com/dvojak-cz/DotFiles.git
@@ -99,11 +99,6 @@
           command:
             cmd: git remote set-url origin {{ ssh_repo }}
             chdir: "{{ path }}"
-        - name: "Dotfiles> apply"
-          when: not dir.stat.exists
-          command:
-            cmd: "./install.sh"
-            chdir: "{{ path }}"
 
     - name: SSH
       block:
@@ -116,4 +111,24 @@
             url: https://owncloud.cesnet.cz/index.php/s/51hpuGkGaQZGa9q/download
             dest: ~/.ssh/id_rsa.zip
             mode: 0600
-    
+
+    - name: Users Sysytemd
+      loop: "{{ USERS[0].SYSTEMD }}"
+      systemd:
+        state: started
+        name: "{{ item }}"
+        scope: user
+        enabled: True
+
+    - name: Users home
+      loop: "{{ USERS[0].DIR }}"
+      file:
+        path: "{{ item }}"
+        state: directory
+
+    - name: VPN
+      block:
+        - name: VPN> fit vpn file
+          get_url:
+            url: https://help.fit.cvut.cz/vpn/media/fit-vpn.ovpn
+            dest: "~/.vpn/fit-vpn.ovpn"
