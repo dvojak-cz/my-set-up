@@ -37,7 +37,7 @@
       block:
         - name: "Install> install desktop environment"
           apt:
-            name: ["lxqt"]
+            name: ["task-xfce-desktop"]
         - name: "Install> GUI apps"
           apt:
             name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert"]
