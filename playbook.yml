@@ -40,10 +40,14 @@
             name: ["lxqt"]
         - name: "Install> GUI apps"
           apt:
-            name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert"]
+            name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert", "network-manager", "network-manager-openvpn", "nm-tray"]
+        - name: Install> Delete connman
+          apt:
+            name: ["connman"]
+            state: absent
         - name: "Install> CLI apps"
           apt:
-            name: ["mc", "tmux", "vim", "aptitude", "tig", "curl", "neofetch", "network-manager", "network-manager-openvpn"]
+            name: ["mc", "tmux", "vim", "aptitude", "tig", "curl"]
         - name: "Install> tools"
           apt:
             name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh", "sudo"]
@@ -99,6 +103,11 @@
           command:
             cmd: git remote set-url origin {{ ssh_repo }}
             chdir: "{{ path }}"
+        - name: Dotfiles> appy
+          when: not dir.stat.exists
+          command:
+            cmd: make
+            chdir: "{{ path }}"
 
     - name: SSH
       block:
@@ -132,3 +141,4 @@
           get_url:
             url: https://help.fit.cvut.cz/vpn/media/fit-vpn.ovpn
             dest: "~/.vpn/fit-vpn.ovpn"
+

@@ -2,8 +2,7 @@
 SUDO_USERS: ["jan"]
 USERS:
   - USERNAME: jan
-    SYSTEMD:
-      - albert.service
+    SYSTEMD: []
     DIR:
       - ~/dev
       - ~/tmp
