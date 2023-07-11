@@ -40,11 +40,7 @@
             name: ["lxqt"]
         - name: "Install> GUI apps"
           apt:
-            name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert", "network-manager", "network-manager-openvpn", "nm-tray"]
-        - name: Install> Delete connman
-          apt:
-            name: ["connman"]
-            state: absent
+            name: ["code", "terminator", "google-chrome-stable", "firefox-esr", "albert"]
         - name: "Install> CLI apps"
           apt:
             name: ["mc", "tmux", "vim", "aptitude", "tig", "curl"]
