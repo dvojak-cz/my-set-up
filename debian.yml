@@ -5,31 +5,23 @@
   connection: local
   vars_files: ["var.yaml"]
   tasks:
-    - name: Add apt repos
-      block:
-        - name: "Apt repo> add susa repo key"
-          get_url:
-            url: https://download.opensuse.org/repositories/home:manuelschneid3r/Debian_12/Release.key
-            dest: "/etc/apt/trusted.gpg.d/suse.asc"
-        - name: "Apt repo> add Suse repo"
-          apt_repository:
-            repo: "deb http://download.opensuse.org/repositories/home:/manuelschneid3r/Debian_12/ /"
-            filename: suse
 
     - name: Install
       block:
         - name: "Install> install desktop environment"
+          tags: [ gnome, never]
           apt:
-            name: ["gnome-core"]
-        - name: "Install> GUI apps"
+            name: [ gnome-core, gnome-tweaks]
+
+        - name: Install> lxqt
+          tags: [ lxqt, never]
           apt:
-            name: [ "terminator",  "firefox-esr" ]
-        - name: "Install> CLI apps"
+            name: [ lxqt ]
+
+        - name: "Install> apps"
           apt:
-            name: ["mc", "tmux", "vim", "aptitude", "tig", "curl"]
-        - name: "Install> tools"
-          apt:
-            name: ["ansible", "docker-compose", "docker.io", "git", "stow", "zsh", "sudo", "snapd"]
+            name: "{{ INSTALL_APPS }}"
+
         - name: Install> snap
           block:
             - name: Install> snap> classic
@@ -40,6 +32,15 @@
               snap:
                 name: ["discord"]
 
+        - name: Install> chrome
+          block:
+            - name: Install> chrome> download
+              get_url:
+                url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+                dest: /tmp/google-chrome-stable_current_amd64.deb
+            - name: Install> chrome> install
+              apt:
+                deb: /tmp/google-chrome-stable_current_amd64.deb
 
     - name: Add jan tu sudo group
       loop: "{{ SUDO_USERS }}"
@@ -54,15 +55,18 @@
   vars_files: ["var.yaml"]
   become_user: "{{ USERS[0].USERNAME }}"
   tasks:
+
     - name: Oh My zsh
       block:
         - name: "Oh My zsh> check if zsh is default shell"
           stat:
             path: ~/.oh-my-zsh
           register: oh_my_zsh
+
         - name: "Oh My zsh> install"
           when: not (oh_my_zsh.stat.isdir is defined and oh_my_zsh.stat.isdir)
           shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
         - name: "Oh My zsh> set zsh as default shell"
           become: True
           become_user: root
@@ -70,56 +74,57 @@
             name: "{{ USERS[0].USERNAME }}"
             shell: /bin/zsh
 
+    - name: "Dotfiles> check if dotfiles directory exists"
+      stat:
+        path: "{{ path }}"
+      register: dir
+
     - name: Dotfiles
+      when: not dir.stat.exists
       vars:
         repo: https://github.com/dvojak-cz/DotFiles.git
         path: "~/.dotfiles"
         ssh_repo: "git@github.com:dvojak-cz/DotFiles.git"
       block:
-        - name: "Dotfiles> check if dotfiles directory exists"
-          stat:
-            path: "{{ path }}"
-          register: dir
+
         - name: "Dotfiles> clone"
-          when: not dir.stat.exists
           git:
             repo: "{{ repo }}"
             dest: "{{ path }}"
             clone: yes
             update: yes
+
         - name: "Dotfiles> set remote url to ssh"
-          when: not dir.stat.exists
           command:
             cmd: git remote set-url origin {{ ssh_repo }}
             chdir: "{{ path }}"
+
         - name: Dotfiles> appy
-          when: false and not dir.stat.exists
+          tags: [never, dotfiles]
           command:
             cmd: make
             chdir: "{{ path }}"
 
-    - name: SSH
-      block:
-        - name: create .ssh folder
-          file:
-            path: ~/.ssh/
-            state: directory
-        - name: Download ssh key
-          get_url:
-            url: https://owncloud.cesnet.cz/index.php/s/51hpuGkGaQZGa9q/download
-            dest: ~/.ssh/id_rsa.zip
-            mode: 0600
+        - name: Dotfiles> install zsh-autosuggestions
+          tags: [never, dotfiles]
+          git:
+            repo: https://github.com/zsh-users/zsh-autosuggestions
+            dest: "~/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+
+        - name: Dotfiles> install zsh-syntax-highlighting
+          tags: [never, dotfiles]
+          git:
+            repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+            dest: "~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+
+        - name: Dotfiles> appy gnome
+          tags: [gnome,never]
+          command:
+            cmd: make gnome
+            chdir: "{{ path }}"
 
     - name: Users home
       loop: "{{ USERS[0].DIR }}"
       file:
         path: "{{ item }}"
         state: directory
-
-    - name: VPN
-      block:
-        - name: VPN> fit vpn file
-          get_url:
-            url: https://help.fit.cvut.cz/vpn/media/fit-vpn.ovpn
-            dest: "~/.vpn/fit-vpn.ovpn"
-

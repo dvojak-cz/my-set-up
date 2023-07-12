@@ -7,3 +7,21 @@ USERS:
       - ~/dev
       - ~/tmp
       - ~/.vpn
+INSTALL_APPS:
+  - firefox-esr
+  - mc
+  - tmux
+  - vim
+  - htop
+  - aptitude
+  - tig
+  - curl
+  - ansible
+  - docker-compose
+  - docker.io
+  - git
+  - stow
+  - zsh
+  - sudo
+  - snapd
+  - make
